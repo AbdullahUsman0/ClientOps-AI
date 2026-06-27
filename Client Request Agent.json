@@ -1,0 +1,335 @@
+{
+  "name": "Client Request Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -1344,
+        528
+      ],
+      "id": "aa31ad08-7ca9-4d5c-a639-767ff2d11b00",
+      "name": "When chat message received",
+      "webhookId": "dd042ca5-307f-40b8-92ad-89b5993a896c"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Follow this workflow exactly:\n\n1. Create a client request record.\n2. Schedule the client meeting.\n3. Create an approval request for human review.\n\nDo not send notifications or summary emails until approval is granted.\n\nHuman reviewers will update the approval status.\n\nPossible statuses:\n- Pending\n- Changes Required\n- Approved\n- Rejected\n\nOnce the approval request has been created, report that the request is awaiting review.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -1120,
+        416
+      ],
+      "id": "01bdc7b0-756c-4a94-a89b-d12e60011432",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "qwen/qwen3-32b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -1104,
+        640
+      ],
+      "id": "90162e60-c2ea-4322-82fb-917fc9c8743b",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "pLOG2LBY9qMPp2Ln",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://localhost:5678/mcp/1f415b10-67cd-4e5d-9c9d-a7db53a7d4d3",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.3,
+      "position": [
+        -976,
+        640
+      ],
+      "id": "69b7d591-2d47-4d90-9d88-25c3a3f7b946",
+      "name": "MCP Client"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1F4jJ4SjBoMR2fxcwaxVy8cj0mjudOKLtBHbBivY7AZY",
+          "mode": "list",
+          "cachedResultName": "Pending Approvals",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1F4jJ4SjBoMR2fxcwaxVy8cj0mjudOKLtBHbBivY7AZY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1F4jJ4SjBoMR2fxcwaxVy8cj0mjudOKLtBHbBivY7AZY/edit#gid=0"
+        },
+        "event": "rowUpdate",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1344,
+        944
+      ],
+      "id": "8d640244-37b4-48ee-befd-05e1dadfc8d7",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "LQEvRxSx2fTpoEdo",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.Status }}",
+                    "rightValue": "Approved",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "619a8022-6bad-44e6-bc07-6f9a099f64dd"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "643e5256-b131-453d-abad-635975ebb6a4",
+                    "leftValue": "={{ $json.Status }}",
+                    "rightValue": "Declined",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -1120,
+        944
+      ],
+      "id": "21e9329b-97d1-42e0-9a4a-96c3932bc509",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Google Sheets Trigger').item.json.Project_Owner_Email }}",
+        "subject": "Client Request Approved - {{ $json.Company_Name }}",
+        "emailType": "text",
+        "message": "The client request has been approved.  Client: {{$json.Client_Name}} Company: {{$json.Company_Name}} Request Type: {{$json.Request_Type}} Priority: {{$json.Priority}} Meeting Date: {{$json.Meeting_Date}}  The request is now proceeding to execution.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -896,
+        848
+      ],
+      "id": "23a50a5a-00d2-4b9c-9d22-a6b1d4e67209",
+      "name": "Send a message",
+      "webhookId": "9ce69fa0-5a33-4fde-90b6-41bf8c3329f9",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "CjrtN6earoz10qqw",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Google Sheets Trigger').item.json.Project_Owner_Email }}",
+        "subject": "Client Request Rejected",
+        "emailType": "text",
+        "message": "=The client request was rejected during review.  Reviewer Notes: {{$json.Reviewer_Notes}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -896,
+        1040
+      ],
+      "id": "2dba00ec-098c-4f8c-a3b9-34dca960518a",
+      "name": "Send a message1",
+      "webhookId": "337fe598-e1b6-4542-b615-3e8112cc4dcd",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "CjrtN6earoz10qqw",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "phoneNumberId": "1160520840480199",
+        "recipientPhoneNumber": "+923177316347",
+        "template": "hello_world|en_US"
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -672,
+        848
+      ],
+      "id": "117897db-95c8-4af9-a6b3-faa7303487fb",
+      "name": "Send template",
+      "webhookId": "aba064bd-d54e-400c-b29f-c150a2da0992",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "GhozWsLdIq3FX36Z",
+          "name": "WhatsApp account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        []
+      ]
+    },
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Send template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "18e79ba0-51a0-4f5c-a431-3ff8fa87b41a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "36568b635f1b49a6070968802cf111cfc5fac122c8c9a17152eccd44903e7faa"
+  },
+  "nodeGroups": [],
+  "id": "8AHTfKbYPfAKWDqq",
+  "tags": []
+}
