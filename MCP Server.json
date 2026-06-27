@@ -1,0 +1,432 @@
+{
+  "name": "MCP Server",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "1f415b10-67cd-4e5d-9c9d-a7db53a7d4d3"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        0
+      ],
+      "id": "6b45fc61-3093-4e27-93bc-506f4472ed6e",
+      "name": "MCP Server Trigger",
+      "webhookId": "1f415b10-67cd-4e5d-9c9d-a7db53a7d4d3"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Create a new client request record in Google Sheets.",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "13PHXqzwYk0qF2KhaqgxE-CBXyx7B6XGcBNLPcTiopTU",
+          "mode": "list",
+          "cachedResultName": "Client Requests",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/13PHXqzwYk0qF2KhaqgxE-CBXyx7B6XGcBNLPcTiopTU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/13PHXqzwYk0qF2KhaqgxE-CBXyx7B6XGcBNLPcTiopTU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Client Name": "={{ $fromAI(\"client_name\") }}",
+            "Company Name": "={{ $fromAI(\"company_name\") }}",
+            "Priority": "={{ $fromAI(\"priority\") }}",
+            "Meeting Date": "={{ $fromAI(\"meeting_date\") }}",
+            "Project Owner": "={{ $fromAI(\"project_owner\") }}",
+            "Request Type": "={{ $fromAI(\"request_type\") }}",
+            "Project Owner Email": "={{ $fromAI(\"Project_Owner_Email\") }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Client Name",
+              "displayName": "Client Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Request Type",
+              "displayName": "Request Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Meeting Date",
+              "displayName": "Meeting Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Project Owner",
+              "displayName": "Project Owner",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Project Owner Email",
+              "displayName": "Project Owner Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        -592,
+        192
+      ],
+      "id": "d2c3a117-67f0-4881-ae28-4524feffd155",
+      "name": "create_client_record",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "C3vZb0BnDG8cPA5L",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Schedule a meeting with the client.",
+        "calendar": {
+          "__rl": true,
+          "value": "johndeere02269@gmail.com",
+          "mode": "list",
+          "cachedResultName": "johndeere02269@gmail.com"
+        },
+        "start": "={{ $fromAI(\"meeting_date\") }}",
+        "end": "={{ $date($fromAI(\"meeting_date\")).plus({ hours: 1 }) }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -416,
+        304
+      ],
+      "id": "0a39f600-6e85-4c2c-a220-7225991ce1e5",
+      "name": "schedule_client_meeting",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "wEo9SQqlsoYJxKO8",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Send a project summary email to the project owner.",
+        "sendTo": "={{ $fromAI(\"project_owner_email\") }}",
+        "subject": "=New Client Request - {{ $fromAI(\"company_name\") }}",
+        "emailType": "text",
+        "message": "=Client: {{ $fromAI(\"client_name\") }}  Company: {{ $fromAI(\"company_name\") }}  Request: {{ $fromAI(\"request_type\") }}  Priority: {{ $fromAI(\"priority\") }}  Meeting Date: {{ $fromAI(\"meeting_date\") }}  Project Owner: {{ $fromAI(\"project_owner\") }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        -128,
+        320
+      ],
+      "id": "354fc7d0-e40b-4257-9955-c4be91bfb78f",
+      "name": "send_project_owner_summary",
+      "webhookId": "9bf9b627-38d1-4337-afc3-954d7590d892",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "CjrtN6earoz10qqw",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Create a human review request for a client service request. Use this tool after creating the client record and scheduling the meeting. All approval requests must start with status Pending.\n",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1F4jJ4SjBoMR2fxcwaxVy8cj0mjudOKLtBHbBivY7AZY",
+          "mode": "list",
+          "cachedResultName": "Pending Approvals",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1F4jJ4SjBoMR2fxcwaxVy8cj0mjudOKLtBHbBivY7AZY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1F4jJ4SjBoMR2fxcwaxVy8cj0mjudOKLtBHbBivY7AZY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Request ID": "={{ Date.now() }}",
+            "Client Name": "= {{ $fromAI(\"client_name\") }}",
+            "Request_Type": "={{ $fromAI(\"request_type\") }}",
+            "Company Name": "={{ $fromAI(\"company_name\") }}",
+            "Priority": "={{ $fromAI(\"priority\") }}",
+            "Meeting_Date": "={{ $fromAI(\"meeting_date\") }}",
+            "Project_Owner": "={{ $fromAI(\"project_owner\") }}",
+            "Project_Owner_Email": "{{ $fromAI(\"project_owner_email\") }}",
+            "Reviewer_Notes": "Waiting for review",
+            "Status": "Pending"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Request ID",
+              "displayName": "Request ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Client Name",
+              "displayName": "Client Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Request_Type",
+              "displayName": "Request_Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Meeting_Date",
+              "displayName": "Meeting_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Project_Owner",
+              "displayName": "Project_Owner",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Project_Owner_Email",
+              "displayName": "Project_Owner_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reviewer_Notes",
+              "displayName": "Reviewer_Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        176,
+        320
+      ],
+      "id": "864e0adc-7e67-4c4c-9522-a5627029d544",
+      "name": "create_approval_request",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "C3vZb0BnDG8cPA5L",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "phoneNumberId": "=",
+        "recipientPhoneNumber": "+923177316347",
+        "template": "="
+      },
+      "type": "n8n-nodes-base.whatsAppTool",
+      "typeVersion": 1.1,
+      "position": [
+        256,
+        80
+      ],
+      "id": "f8008baa-0abe-44bd-9f44-e331f2b3c6e0",
+      "name": "Send template in WhatsApp Business Cloud",
+      "webhookId": "9d6a845d-e157-4683-a155-4bc50697fc6d",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "GhozWsLdIq3FX36Z",
+          "name": "WhatsApp account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "create_client_record": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "schedule_client_meeting": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "send_project_owner_summary": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "create_approval_request": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send template in WhatsApp Business Cloud": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "00e9c6f7-d6c7-43be-afa4-c4f6b7039050",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "36568b635f1b49a6070968802cf111cfc5fac122c8c9a17152eccd44903e7faa"
+  },
+  "nodeGroups": [],
+  "id": "PhLLTJIb3yDg12Dx",
+  "tags": []
+}
